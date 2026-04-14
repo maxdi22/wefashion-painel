@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id                   String      @id @default(uuid())
+  name                 String
+  domain               String?
+  publicKey            String      @unique
+  secretKey            String
+  installToken         String?     @unique
+  plan                 String      @default("free")   // free, starter, growth, pro, scale
+  subscriptionStatus   String      @default("none")   // active, past_due, canceled, none
+  stripeCustomerId     String?     @unique
+  stripeSubscriptionId String?     @unique
+  proofsBalance        Int         @default(0)
+  proofsMonthlyLimit   Int         @default(0)
+  proofsUsedThisMonth  Int         @default(0)
+  currentPeriodEnd     DateTime?
+  status               String      @default("active") // active, suspended
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  users                Profile[]
+  analytics            Analytics[]
+  pluginInstallations  PluginInstallation[]
+  integrationLogs      IntegrationLog[]
+  tryOnJobs            TryOnJob[]
+  tryOnLogs            TryOnLog[]
+  leads                Lead[]
+}
+
+model Profile {
+  id        String   @id // Vinculado ao ID do auth.users do Supabase
+  email     String   @unique
+  role      String   @default("tenant_admin") // super_admin, tenant_admin
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model TryOnJob {
+  id               String   @id @default(uuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  productId        String
+  productType      String   // top, bottom, dress, etc.
+  productImageUrl  String
+  optimizedImageUrl String?
+  hasOptimizedImage Boolean  @default(false)
+  userImageUrl     String
+  resultImageUrl   String?
+  falRequestId     String?  // ID retornado pela Fal.ai
+  status           String   @default("pending") // pending, submitted, processing, done, error
+  promptUsed       String?  @default("")
+  errorDetail      String?
+  measurements     String?  // JSON string com medidas opcionais
+  garmentMeta      Json?    // Metadados técnicos da peça (category, scope, length, fit, notes)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  logs             TryOnLog[]
+}
+
+model TryOnLog {
+  id           String   @id @default(uuid())
+  jobId        String
+  job          TryOnJob @relation(fields: [jobId], references: [id])
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  level        String   @default("info") // info, warning, error
+  action       String   // submit_started, status_check, result_ready, etc.
+  message      String
+  payload      String?  // JSON string com detalhes extras
+  createdAt    DateTime @default(now())
+}
+
+model Analytics {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  date       DateTime @default(now())
+  metric     String   // "generation_count", "conversion"
+  value      Int
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  userId     String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+}
+
+model PluginInstallation {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  siteUrl         String
+  platform        String   @default("wordpress_woocommerce")
+  pluginVersion   String
+  status          String   @default("connected") // connected, disconnected
+  lastConnectedAt DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model IntegrationLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  level     String   @default("info") // info, error, warning
+  action    String
+  message   String
+  details   String?  // JSON string
+  createdAt DateTime @default(now())
+}
+
+model Lead {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  jobId           String   @unique
+  productId       String
+  name            String?
+  email           String?
+  whatsapp        String?
+  resultImageUrl  String?
+  sessionId       String?
+  source          String   @default("tryon")
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([whatsapp])
+}
