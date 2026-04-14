@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
 import { supabase } from '../lib/supabase';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_mode';
 
 export class AuthController {
@@ -260,7 +258,12 @@ export class AuthController {
       });
 
     } catch (err: any) {
-      return res.status(500).json({ error: 'Erro interno no servidor' });
+      console.error('[Auth] Login Error Details:', {
+        message: err.message,
+        stack: err.stack,
+        code: err.code
+      });
+      return res.status(500).json({ error: 'Erro interno no servidor de autenticação' });
     }
   }
 

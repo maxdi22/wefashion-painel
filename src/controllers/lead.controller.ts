@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { EmailService } from '../services/emailService';
-
-const prisma = new PrismaClient();
 
 export class LeadController {
   /**

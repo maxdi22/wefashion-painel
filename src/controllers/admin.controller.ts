@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
 import { supabaseAdmin } from '../lib/supabase';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import crypto from 'crypto';
 import { EmailService, EmailTemplateId } from '../services/emailService';
-
-const prisma = new PrismaClient();
 
 export class AdminController {
   /**

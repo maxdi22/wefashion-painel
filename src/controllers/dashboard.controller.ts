@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import os from 'os';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export class DashboardController {
   public static async getHome(req: Request, res: Response) {

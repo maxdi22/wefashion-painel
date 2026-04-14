@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 export class TenantController {
   public static async regenerateInstallToken(req: Request, res: Response) {
