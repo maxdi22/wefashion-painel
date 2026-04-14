@@ -22,9 +22,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Inicializar Worker
-setupWorker();
-
 // Middlewares
 app.use(helmet({
   contentSecurityPolicy: false, // Desativar CSP temporariamente para carregar fontes externas no Dash
@@ -63,6 +60,9 @@ app.use(errorHandler);
 
 let server: any;
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  // Inicializar Worker apenas localmente
+  setupWorker();
+
   server = app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`🚀 Virtual Try-On Core rodando em http://0.0.0.0:${PORT}`);
   });
