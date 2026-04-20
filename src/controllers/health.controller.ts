@@ -65,4 +65,51 @@ export class HealthController {
       });
     }
   }
+  /**
+   * Diagnostic Endpoint
+   * GET /v1/health/diag
+   */
+  public static async diagnose(req: Request, res: Response) {
+    const checkEnv = (key: string) => ({
+      key,
+      status: process.env[key] ? 'SET' : 'MISSING',
+      length: process.env[key]?.length || 0,
+    });
+
+    const envChecks = [
+      'DATABASE_URL',
+      'SUPABASE_URL',
+      'SUPABASE_ANON_KEY',
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'JWT_SECRET',
+      'FAL_KEY',
+      'REDIS_URL',
+      'NODE_ENV'
+    ].map(checkEnv);
+
+    const results: any = {
+      environment: envChecks,
+      database: 'checking',
+      supabase: 'checking',
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      // Test DB
+      await prisma.$queryRaw`SELECT 1`;
+      results.database = 'connected';
+    } catch (e: any) {
+      results.database = `error: ${e.message}`;
+    }
+
+    try {
+      // Test Supabase (simple fetch)
+      const { data, error } = await prisma.profile.findFirst({ select: { id: true } });
+      results.supabase = error ? `error: ${error}` : 'connected';
+    } catch (e: any) {
+      results.supabase = `error: ${e.message}`;
+    }
+
+    res.json(results);
+  }
 }

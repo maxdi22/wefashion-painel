@@ -22,16 +22,16 @@ export class AuthController {
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root {
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <style type="text/tailwindcss">
+        @theme {
             --primary: #1A1A1A;
             --surface: #F8F8F8;
             --surface-container: #EEEEEE;
         }
         body { 
             font-family: 'Inter', sans-serif;
-            background-color: var(--surface);
+            @apply bg-[#F8F8F8];
         }
         .font-headline { font-family: 'Outfit', sans-serif; }
     </style>
@@ -258,12 +258,21 @@ export class AuthController {
       });
 
     } catch (err: any) {
-      console.error('[Auth] Login Error Details:', {
+      console.error('[Auth] Login CRITICAL ERROR:', {
         message: err.message,
+        name: err.name,
         stack: err.stack,
-        code: err.code
+        code: err.code,
+        meta: err.meta // Para erros do Prisma
       });
-      return res.status(500).json({ error: 'Erro interno no servidor de autenticação' });
+
+      // Em produção, queremos saber se o erro foi no Supabase ou no Prisma
+      const errorContext = err.message?.includes('prisma') ? 'Database Error' : 'Auth Provider Error';
+      
+      return res.status(500).json({ 
+        error: 'Erro interno no servidor de autenticação',
+        debug: process.env.NODE_ENV === 'development' ? err.message : errorContext
+      });
     }
   }
 
