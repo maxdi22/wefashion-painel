@@ -10,7 +10,7 @@ export let isUsingRedis = false;
 let connection: any = null;
 let queueInstance: any = null;
 
-// No Vercel, se o Redis for localhost, nem tentamos conectar para evitar delay de timeout (2s)
+// Otimização para Vercel: Se o Redis for localhost, pulamos a conexão para evitar timeout (2s)
 const isLocalRedis = REDIS_URL.includes('localhost') || REDIS_URL.includes('127.0.0.1');
 const shouldConnect = !process.env.VERCEL || !isLocalRedis;
 
