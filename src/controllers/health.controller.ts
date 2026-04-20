@@ -70,11 +70,26 @@ export class HealthController {
    * GET /v1/health/diag
    */
   public static async diagnose(req: Request, res: Response) {
-    const checkEnv = (key: string) => ({
-      key,
-      status: process.env[key] ? 'SET' : 'MISSING',
-      length: process.env[key]?.length || 0,
-    });
+    const checkEnv = (key: string) => {
+      const val = process.env[key];
+      let status = 'MISSING';
+      let display = '';
+      
+      if (val) {
+        status = 'SET';
+        // Mostrar os primeiros e últimos caracteres para conferir se é a chave certa
+        display = val.length > 8 
+          ? `${val.substring(0, 4)}...${val.substring(val.length - 4)}`
+          : '***';
+      }
+
+      return {
+        key,
+        status,
+        display,
+        length: val?.length || 0
+      };
+    };
 
     const envChecks = [
       'DATABASE_URL',
