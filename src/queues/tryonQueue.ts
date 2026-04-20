@@ -42,8 +42,9 @@ if (shouldConnect) {
     console.log('✅ [Queue] Conectado ao Redis com sucesso.');
   });
 
-} catch (e) {
-  console.warn('⚠️ [Queue] Erro ao instanciar Redis. Usando modo Mock.');
+  } catch (e) {
+    console.warn('⚠️ [Queue] Erro ao instanciar Redis. Usando modo Mock.');
+  }
 }
 
 // Interface simplificada para a Fila
