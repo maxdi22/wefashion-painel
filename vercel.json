@@ -3,12 +3,23 @@
   "builds": [
     {
       "src": "src/server.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "public/**",
+          "prisma/**"
+        ]
+      }
     }
   ],
   "routes": [
     {
-      "src": "/v1/billing(.*)",
+      "src": "/(css|js|images|fonts)/(.*)",
+      "dest": "/public/$1/$2",
+      "continue": true
+    },
+    {
+      "src": "/v1/billing/(.*)",
       "dest": "src/server.ts"
     },
     {

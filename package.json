@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Central de Operações SaaS - Virtual Try-On",
   "main": "dist/server.js",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --exit-child src/server.ts",
     "build": "tsc",

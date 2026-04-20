@@ -174,6 +174,11 @@ class MemoryQueue implements IQueue {
     : new MemoryQueue();
   
   export const setupWorker = () => {
+    if (process.env.VERCEL) {
+      console.log('ℹ️ [Worker] Pulando setupWorker no ambiente Vercel (Serverless).');
+      return;
+    }
+
     if (!isUsingRedis) {
       console.log('🚀 [Worker] Rodando em modo de processamento interno (Sem Redis).');
       return;

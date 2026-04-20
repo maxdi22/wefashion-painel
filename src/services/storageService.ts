@@ -10,10 +10,10 @@ cloudinary.config({
 });
 
 export class StorageService {
-  private static readonly UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+  private static readonly UPLOAD_DIR = process.env.VERCEL ? '/tmp' : (process.env.UPLOAD_DIR || './uploads');
 
   constructor() {
-    if (!fs.existsSync(StorageService.UPLOAD_DIR)) {
+    if (!process.env.VERCEL && !fs.existsSync(StorageService.UPLOAD_DIR)) {
       fs.mkdirSync(StorageService.UPLOAD_DIR, { recursive: true });
     }
   }
