@@ -111,10 +111,15 @@ export class HealthController {
 
     try {
       // Test DB
+      const dbUrl = process.env.DATABASE_URL || '';
+      const hostname = dbUrl.split('@')[1]?.split(':')[0] || 'unknown';
+      
       await prisma.$queryRaw`SELECT 1`;
       results.database = 'connected';
+      results.db_host = hostname;
     } catch (e: any) {
       results.database = `error: ${e.message}`;
+      results.prisma_code = e.code;
     }
 
     try {

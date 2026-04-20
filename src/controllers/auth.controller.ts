@@ -248,6 +248,10 @@ export class AuthController {
         tenantId: profile.tenantId
       };
 
+      if (JWT_SECRET === 'fallback_secret_for_dev_mode' && process.env.NODE_ENV === 'production') {
+        console.warn('[Auth] WARNING: Using insecure fallback JWT_SECRET in production. Please set JWT_SECRET env var.');
+      }
+
       const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' });
 
       return res.status(200).json({
@@ -261,17 +265,21 @@ export class AuthController {
       console.error('[Auth] Login CRITICAL ERROR:', {
         message: err.message,
         name: err.name,
-        stack: err.stack,
         code: err.code,
-        meta: err.meta // Para erros do Prisma
+        meta: err.meta
       });
 
-      // Em produção, queremos saber se o erro foi no Supabase ou no Prisma
-      const errorContext = err.message?.includes('prisma') ? 'Database Error' : 'Auth Provider Error';
-      
+      // Erro específico para banco fora do ar ou URL errada
+      if (err.message?.includes('P1001') || err.message?.includes('Can\'t reach database server')) {
+        return res.status(500).json({ 
+          error: 'Banco de dados inacessível',
+          debug: 'Erro de conexão com o Supabase Pooler (P1001). Verifique se a DATABASE_URL está correta e usa o hostname IPv4.'
+        });
+      }
+
       return res.status(500).json({ 
         error: 'Erro interno no servidor de autenticação',
-        debug: process.env.NODE_ENV === 'development' ? err.message : errorContext
+        debug: process.env.NODE_ENV === 'production' ? 'Database/Config Error' : err.message
       });
     }
   }
