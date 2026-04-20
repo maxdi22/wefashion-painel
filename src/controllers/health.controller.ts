@@ -103,9 +103,9 @@ export class HealthController {
     }
 
     try {
-      // Test Supabase (simple fetch)
-      const { data, error } = await prisma.profile.findFirst({ select: { id: true } });
-      results.supabase = error ? `error: ${error}` : 'connected';
+      // Test Supabase/Prisma Profiles (simple fetch)
+      const profile = await prisma.profile.findFirst({ select: { id: true } });
+      results.supabase = profile ? 'connected' : 'no profiles found';
     } catch (e: any) {
       results.supabase = `error: ${e.message}`;
     }
