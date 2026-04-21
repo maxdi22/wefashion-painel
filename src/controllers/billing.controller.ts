@@ -211,7 +211,7 @@ export class BillingController {
       return res.json({ received: true });
     } catch (err) {
       console.error('[Stripe Webhook] Erro processando evento:', err);
-      return res.status(500).json({ error: 'Webhook handler failed' });
+      return res.status(500).json({ error: 'Falha no processamento do Webhook' });
     }
   }
 

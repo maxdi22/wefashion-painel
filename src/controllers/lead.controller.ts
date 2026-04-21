@@ -24,14 +24,14 @@ export class LeadController {
       if (!tenant_id || !job_id || !product_id) {
         return res.status(400).json({ 
           success: false, 
-          error: 'Missing required fields: tenant_id, job_id, product_id' 
+          error: 'Campos obrigatórios ausentes: tenant_id, job_id, product_id' 
         });
       }
 
       if (!email && !whatsapp) {
         return res.status(400).json({ 
           success: false, 
-          error: 'At least one contact method (email or whatsapp) is required' 
+          error: 'Pelo menos um método de contato (e-mail ou WhatsApp) é obrigatório' 
         });
       }
 
@@ -87,7 +87,7 @@ export class LeadController {
 
       return res.status(201).json({
         success: true,
-        message: 'Lead captured successfully',
+        message: 'Lead capturado com sucesso',
         lead_id: lead.id
       });
 
@@ -108,7 +108,7 @@ export class LeadController {
       const { tenant_id } = req.query;
 
       if (!tenant_id) {
-        return res.status(400).json({ error: 'tenant_id is required' });
+        return res.status(400).json({ error: 'O preenchimento do campo tenant_id é obrigatório' });
       }
 
       const leads = await prisma.lead.findMany({

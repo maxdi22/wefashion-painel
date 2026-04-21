@@ -17,55 +17,133 @@ export class AdminController {
     }
 
     try {
-      // 1. Criar Usuário no Supabase
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true
+      // 1. Verificação prévia: evitar duplicidade no banco local antes de tocar no Supabase
+      const existingProfile = await prisma.profile.findUnique({
+        where: { email }
       });
 
-      if (authError || !authData.user) {
-        throw new Error(authError?.message || 'Erro ao criar usuário no Supabase');
+      if (existingProfile) {
+        return res.status(400).json({ error: 'Este e-mail já está registrado em nossa base de dados.' });
       }
 
-      const userId = authData.user.id;
+      // Variável para controle de rollback
+      let authUserId: string | null = null;
 
-      // 2. Criar Tenant
-      const installToken = crypto.randomBytes(32).toString('hex');
-      const publicKey = `pk_test_${crypto.randomBytes(16).toString('hex')}`;
-      const secretKey = `sk_test_${crypto.randomBytes(32).toString('hex')}`;
-
-      const tenant = await prisma.tenant.create({
-        data: {
-          name,
-          domain: 'Localhost/Teste',
-          installToken,
-          publicKey,
-          secretKey,
-          status: 'active',
-          plan: 'trial'
-        }
-      });
-
-      // 3. Criar Profile vinculado ao Tenant
-      await prisma.profile.create({
-        data: {
-          id: userId,
+      try {
+        // 2. Criar Usuário no Supabase
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email,
-          role: 'tenant_admin',
-          tenantId: tenant.id
-        }
-      });
+          password,
+          email_confirm: true
+        });
 
-      return res.status(201).json({
-        success: true,
-        message: 'Loja e usuário administrador criados com sucesso.',
-        tenant
-      });
+        if (authError || !authData.user) {
+          // Se o erro for "User already registered", tratamos especificamente
+          if (authError?.message?.includes('already registered')) {
+            return res.status(400).json({ 
+              error: 'Usuário já existe no provedor de autenticação (Supabase). Se ele não aparece na lista de Lojas, pode ser uma conta órfã que precisa de limpeza manual.' 
+            });
+          }
+          throw new Error(authError?.message || 'Erro ao criar usuário no Supabase');
+        }
+
+        authUserId = authData.user.id;
+
+        // 3. Executar Transação no Prisma (Tenant + Profile)
+        const result = await prisma.$transaction(async (tx) => {
+          const installToken = crypto.randomBytes(32).toString('hex');
+          const publicKey = `pk_test_${crypto.randomBytes(16).toString('hex')}`;
+          const secretKey = `sk_test_${crypto.randomBytes(32).toString('hex')}`;
+
+          const newTenant = await tx.tenant.create({
+            data: {
+              name,
+              domain: 'Localhost/Teste',
+              installToken,
+              publicKey,
+              secretKey,
+              status: 'active',
+              plan: 'trial'
+            }
+          });
+
+          const newProfile = await tx.profile.upsert({
+            where: { id: authUserId! },
+            update: {
+              tenantId: newTenant.id,
+              role: 'tenant_admin'
+            },
+            create: {
+              id: authUserId!,
+              email,
+              role: 'tenant_admin',
+              tenantId: newTenant.id
+            }
+          });
+
+          return { tenant: newTenant, profile: newProfile };
+        });
+
+        return res.status(201).json({
+          success: true,
+          message: 'Loja e usuário administrador criados com sucesso.',
+          tenant: result.tenant
+        });
+
+      } catch (innerError: any) {
+        // ROLLBACK: Se o Prisma falhou, deletamos o usuário que acabamos de criar no Supabase
+        if (authUserId) {
+          console.warn(`[Admin] Falha no Prisma. Iniciando rollback do usuário Supabase: ${authUserId}`);
+          await supabaseAdmin.auth.admin.deleteUser(authUserId);
+        }
+        throw innerError;
+      }
 
     } catch (err: any) {
-      console.error('[Admin] Erro ao criar loja:', err);
+      console.error('[Admin] Erro crítico ao criar loja:', err);
+      
+      // Tratamento de erros de conexão com DB (P1001)
+      if (err.message?.includes('P1001') || err.message?.includes('database server')) {
+        return res.status(503).json({ 
+          error: 'Banco de dados temporariamente indisponível. O usuário no Supabase foi removido para garantir a consistência.',
+          debug: err.message
+        });
+      }
+
       return res.status(500).json({ error: err.message || 'Erro interno ao criar loja.' });
+    }
+  }
+
+  /**
+   * API: Atualizar dados de uma Loja (Plano, Saldo, Status)
+   * PATCH /v1/admin/tenants/:id
+   */
+  public static async updateTenant(req: Request, res: Response) {
+    const { id } = req.params;
+    const { plan, proofsBalance, proofsMonthlyLimit, status } = req.body;
+
+    try {
+      const updatedTenant = await prisma.tenant.update({
+        where: { id },
+        data: {
+          ...(plan && { 
+            plan,
+            subscriptionStatus: plan !== 'free' ? 'active' : 'none'
+          }),
+          ...(proofsBalance !== undefined && { proofsBalance: Number(proofsBalance) }),
+          ...(proofsMonthlyLimit !== undefined && { proofsMonthlyLimit: Number(proofsMonthlyLimit) }),
+          ...(status && { status })
+        }
+      });
+
+      return res.json({
+        success: true,
+        message: 'Loja atualizada com sucesso.',
+        tenant: updatedTenant
+      });
+    } catch (err: any) {
+      console.error('[Admin] Erro ao atualizar loja:', err);
+      return res.status(500).json({ error: err.message || 'Erro ao atualizar dados da loja.' });
     }
   }
 

@@ -29,12 +29,15 @@ export class TenantController {
     }
 
     try {
-      const { name } = req.body;
+      const { name, domain } = req.body;
       const tenantId = req.user.tenantId;
 
       await prisma.tenant.update({
         where: { id: tenantId },
-        data: { name }
+        data: { 
+          name,
+          domain
+        }
       });
 
       return res.json({ success: true });
