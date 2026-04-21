@@ -3,6 +3,8 @@ import os from 'os';
 import { prisma } from '../lib/prisma';
 
 export class DashboardController {
+  private static readonly APP_URL = process.env.APP_URL || 'http://localhost:3000';
+
   public static async getHome(req: Request, res: Response) {
     if (!req.user) {
       return res.status(401).json({ error: 'Não autenticado' });
@@ -493,7 +495,7 @@ export class DashboardController {
                             <div>
                                 <label class="text-[9px] font-black uppercase text-[#BCBCBC] block mb-4 pl-4 italic tracking-widest leading-none">URL Base da API</label>
                                 <div class="relative group">
-                                    <input type="text" readonly value="http://localhost:3000" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-black tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none">
+                                    <input type="text" readonly value="${DashboardController.APP_URL}" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-black tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none">
                                     <button class="absolute right-6 top-1/2 -translate-y-1/2 text-[#D0D0D0] hover:text-[#1A1A1A] transition-all"><span class="material-symbols-outlined text-xl">content_copy</span></button>
                                 </div>
                             </div>
