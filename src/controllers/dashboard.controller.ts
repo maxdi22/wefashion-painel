@@ -915,7 +915,7 @@ export class DashboardController {
                     }
                     .animate-slide-left { animation: slide-left 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
                 </style>
-
+                <script>
                     function togglePasswordVisibility(inputId, btn) {
                         const input = document.getElementById(inputId);
                         const icon = btn.querySelector('.material-symbols-outlined');
