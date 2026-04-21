@@ -160,6 +160,56 @@ export class AuthController {
   /**
    * Renderiza a tela de Registro
    */
+  public static async getRegister(req: Request, res: Response) {
+      const html = `
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro | WeFashion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #1A1A1A;
+            --surface: #F8F8F8;
+        }
+        body { 
+            font-family: 'Inter', sans-serif;
+            background-color: var(--surface);
+        }
+        .font-headline { font-family: 'Outfit', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
+    
+    <div class="w-full max-w-[480px] relative z-10">
+        <div class="bg-white p-12 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-neutral-100 text-center">
+            <div class="mb-10 flex justify-center">
+                <div class="w-16 h-16 rounded-2xl bg-error/10 flex items-center justify-center text-error">
+                    <span class="material-symbols-outlined text-4xl">lock</span>
+                </div>
+            </div>
+            
+            <h2 class="text-3xl font-headline font-extrabold tracking-tighter text-[#1A1A1A] uppercase leading-none mb-6">Acesso Privado</h2>
+            <p class="text-sm text-[#5F5E5E] font-medium leading-relaxed mb-10">
+                A WeFashion opera em um ecossistema exclusivo. <br>
+                Novos registros são processados apenas via convite direto ou aprovação comercial.
+            </p>
+            
+            <div class="space-y-4">
+                <a href="mailto:comercial@wefashion.com" class="block w-full py-5 bg-[#1A1A1A] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:scale-[1.02] transition-all">Contatar Comercial</a>
+                <a href="/login" class="block w-full py-5 bg-surface text-neutral-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:text-[#1A1A1A] transition-all">Voltar para o Login</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+      `;
+      res.send(html);
   }
 
   /**
