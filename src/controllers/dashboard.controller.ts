@@ -61,7 +61,8 @@ export class DashboardController {
     let allTenants: any[] = [];
     if (isSuperAdmin && section === 'tenants') {
       allTenants = await prisma.tenant.findMany({
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        include: { users: true }
       });
     }
 
@@ -732,6 +733,7 @@ export class DashboardController {
                             <thead>
                                 <tr class="text-[10px] font-[800] uppercase tracking-[0.3em] text-[#BABABA]">
                                     <th class="pb-8 pl-8">ID da Unidade</th>
+                                    <th class="pb-8 pl-4">Login / E-mail</th>
                                     <th class="pb-8 pl-4">Plano</th>
                                     <th class="pb-8 pl-4">Uso Mensal</th>
                                     <th class="pb-8 pr-8 text-right">Ações</th>
@@ -748,6 +750,9 @@ export class DashboardController {
                                                     <p class="text-[9px] font-black uppercase tracking-[0.2em] text-[#D0D0D0] mt-1.5 break-all max-w-[150px]">${item.id}</p>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td class="py-10 pl-4">
+                                            <p class="text-[11px] font-[700] text-[#1A1A1A]">${item.users?.[0]?.email || 'N/A'}</p>
                                         </td>
                                         <td class="py-10 pl-4">
                                             <span class="px-4 py-1.5 ${item.status === 'suspended' ? 'bg-red-500 text-white' : 'bg-[#1A1A1A] text-white'} text-[9px] font-black uppercase rounded-xl italic tracking-widest leading-none">${item.plan}</span>
@@ -864,6 +869,32 @@ export class DashboardController {
                                     <span class="material-symbols-outlined text-xl">save</span> Atualizar Contrato e Saldo
                                 </button>
                             </div>
+
+                            <!-- Seção de Segurança -->
+                            <div class="pt-12 border-t border-[#F0F0F0] mt-12">
+                                <h4 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#1A1A1A] mb-8 italic">Segurança e Acesso</h4>
+                                <div class="space-y-6">
+                                    <div class="grid grid-cols-2 gap-8">
+                                        <div>
+                                            <label class="text-[9px] font-black uppercase text-[#BCBCBC] block mb-4 italic tracking-[0.3em]">Novo E-mail de Login</label>
+                                            <input type="email" id="manage-new-email" placeholder="manter atual" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-[800] tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="text-[9px] font-black uppercase text-[#BCBCBC] block mb-4 italic tracking-[0.3em]">Nova Senha</label>
+                                            <input type="password" id="manage-new-password" placeholder="••••••••" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-[800] tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none">
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-4">
+                                        <button type="button" onclick="handleUpdateCredentials()" id="btn-creds" class="flex-1 py-5 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#1A1A1A] hover:text-white transition-all italic flex items-center justify-center gap-3">
+                                            <span class="material-symbols-outlined text-lg">lock_reset</span> Atualizar Acesso
+                                        </button>
+                                        <button type="button" onclick="handleSendResetEmail()" id="btn-reset-email" class="flex-1 py-5 bg-[#F9F9F9] border border-[#F0F0F0] text-[#BCBCBC] text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:border-[#1A1A1A] hover:text-[#1A1A1A] transition-all italic flex items-center justify-center gap-3">
+                                            <span class="material-symbols-outlined text-lg">mail</span> Enviar Recuperação
+                                        </button>
+                                    </div>
+                                    <p class="text-[8px] text-[#A0A0A0] font-[600] uppercase italic text-center">A atualização manual de senha é imediata. O link de recuperação expira em 24h.</p>
+                                </div>
+                            </div>
                             <div id="manage-fb" class="hidden p-6 rounded-[1.5rem] text-[10px] font-black uppercase text-center border italic tracking-widest mt-6"></div>
                         </form>
                     </div>
@@ -965,6 +996,70 @@ export class DashboardController {
                             fb.className = 'p-6 rounded-[1.5rem] text-[10px] font-black uppercase text-center bg-[#E53E3E]/5 text-[#E53E3E] border-[#E53E3E]/20 border italic tracking-widest mt-6';
                         } finally {
                             btn.innerHTML = '<span class="material-symbols-outlined text-xl">save</span> ATUALIZAR CONTRATO E SALDO';
+                            btn.disabled = false;
+                        }
+                    }
+
+                    async function handleUpdateCredentials() {
+                        const btn = document.getElementById('btn-creds');
+                        const fb = document.getElementById('manage-fb');
+                        const id = document.getElementById('manage-id').value;
+                        const email = document.getElementById('manage-new-email').value;
+                        const password = document.getElementById('manage-new-password').value;
+
+                        if (!email && !password) {
+                            alert('Informe um novo e-mail ou senha para atualizar.');
+                            return;
+                        }
+
+                        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-lg">sync</span> PROCESSANDO...';
+                        btn.disabled = true;
+                        fb.classList.add('hidden');
+
+                        try {
+                            const res = await fetch('/v1/admin/tenants/' + id + '/credentials', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email, password })
+                            });
+                            const data = await res.json();
+                            fb.classList.remove('hidden');
+                            fb.innerText = data.success ? 'ACESSO ATUALIZADO COM SUCESSO!' : 'ERRO: ' + (data.error || 'FALHA NA ATUALIZAÇÃO');
+                            fb.className = 'p-6 rounded-[1.5rem] text-[10px] font-black uppercase text-center border italic tracking-widest mt-6 ' + (data.success ? 'bg-[#22C55E]/5 text-[#22C55E] border-[#22C55E]/20' : 'bg-[#E53E3E]/5 text-[#E53E3E] border-[#E53E3E]/20');
+                        } catch (err) {
+                            fb.classList.remove('hidden');
+                            fb.innerText = 'ERRO DE CONEXÃO';
+                            fb.className = 'p-6 rounded-[1.5rem] text-[10px] font-black uppercase text-center bg-[#E53E3E]/5 text-[#E53E3E] border-[#E53E3E]/20 border italic tracking-widest mt-6';
+                        } finally {
+                            btn.innerHTML = '<span class="material-symbols-outlined text-lg">lock_reset</span> ATUALIZAR ACESSO';
+                            btn.disabled = false;
+                        }
+                    }
+
+                    async function handleSendResetEmail() {
+                        const btn = document.getElementById('btn-reset-email');
+                        const fb = document.getElementById('manage-fb');
+                        const id = document.getElementById('manage-id').value;
+
+                        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-lg">sync</span> ENVIANDO...';
+                        btn.disabled = true;
+                        fb.classList.add('hidden');
+
+                        try {
+                            const res = await fetch('/v1/admin/tenants/' + id + '/reset-password', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            const data = await res.json();
+                            fb.classList.remove('hidden');
+                            fb.innerText = data.success ? 'LINK ENVIADO COM SUCESSO VIA RESEND!' : 'ERRO: ' + (data.error || 'FALHA NO DISPARO');
+                            fb.className = 'p-6 rounded-[1.5rem] text-[10px] font-black uppercase text-center border italic tracking-widest mt-6 ' + (data.success ? 'bg-[#22C55E]/5 text-[#22C55E] border-[#22C55E]/20' : 'bg-[#E53E3E]/5 text-[#E53E3E] border-[#E53E3E]/20');
+                        } catch (err) {
+                            fb.classList.remove('hidden');
+                            fb.innerText = 'ERRO DE CONEXÃO';
+                            fb.className = 'p-6 rounded-[1.5rem] text-[10px] font-black uppercase text-center bg-[#E53E3E]/5 text-[#E53E3E] border-[#E53E3E]/20 border italic tracking-widest mt-6';
+                        } finally {
+                            btn.innerHTML = '<span class="material-symbols-outlined text-lg">mail</span> ENVIAR RECUPERAÇÃO';
                             btn.disabled = false;
                         }
                     }

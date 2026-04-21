@@ -16,6 +16,8 @@ router.use((req, res, next) => {
 
 router.post('/tenants', AdminController.createTenant);
 router.patch('/tenants/:id', AdminController.updateTenant);
+router.patch('/tenants/:id/credentials', AdminController.updateTenantCredentials);
+router.post('/tenants/:id/reset-password', AdminController.sendResetPasswordEmail);
 router.post('/marketing/test-email', AdminController.sendMarketingTest);
 
 export default router;

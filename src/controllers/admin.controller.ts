@@ -179,4 +179,105 @@ export class AdminController {
       return res.status(500).json({ error: err.message || 'Erro ao disparar e-mail de teste.' });
     }
   }
+
+  /**
+   * API: Atualizar Credenciais do Tenant (E-mail/Senha)
+   * PATCH /v1/admin/tenants/:id/credentials
+   */
+  public static async updateTenantCredentials(req: Request, res: Response) {
+    const { id } = req.params;
+    const { email: newEmail, password: newPassword } = req.body;
+
+    try {
+      // 1. Encontrar o perfil associado ao tenant
+      const profile = await prisma.profile.findFirst({
+        where: { tenantId: id }
+      });
+
+      if (!profile) {
+        return res.status(404).json({ error: 'Nenhum usuário encontrado para esta loja.' });
+      }
+
+      const updatePayload: any = {};
+      if (newEmail) updatePayload.email = newEmail;
+      if (newPassword) updatePayload.password = newPassword;
+
+      if (Object.keys(updatePayload).length === 0) {
+        return res.status(400).json({ error: 'Nenhum dado informado para atualização.' });
+      }
+
+      // 2. Atualizar no Supabase Auth
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+        profile.id,
+        updatePayload
+      );
+
+      if (authError) {
+        throw new Error(`Erro no Supabase Auth: ${authError.message}`);
+      }
+
+      // 3. Atualizar no Prisma se o e-mail mudou e o auth foi sucesso
+      if (newEmail) {
+        await prisma.profile.update({
+          where: { id: profile.id },
+          data: { email: newEmail }
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Credenciais atualizadas com sucesso.',
+        user: authData.user
+      });
+
+    } catch (err: any) {
+      console.error('[Admin] Erro ao atualizar credenciais:', err);
+      return res.status(500).json({ error: err.message || 'Erro interno ao atualizar credenciais.' });
+    }
+  }
+
+  /**
+   * API: Enviar E-mail de Recuperação de Senha via Resend
+   * POST /v1/admin/tenants/:id/reset-password
+   */
+  public static async sendResetPasswordEmail(req: Request, res: Response) {
+    const { id } = req.params;
+
+    try {
+      const profile = await prisma.profile.findFirst({
+        where: { tenantId: id }
+      });
+
+      if (!profile) {
+        return res.status(404).json({ error: 'Nenhum usuário encontrado para esta loja.' });
+      }
+
+      // 1. Gerar link de recuperação via Supabase
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'recovery',
+        email: profile.email,
+        options: {
+          redirectTo: `${process.env.APP_URL}/login`
+        }
+      });
+
+      if (linkError) {
+        throw new Error(`Erro ao gerar link no Supabase: ${linkError.message}`);
+      }
+
+      // 2. Enviar via Resend
+      await EmailService.sendTemplatedEmail(profile.email, 'PASSWORD_RESET', {
+        resetLink: linkData.properties.action_link
+      });
+
+      return res.json({
+        success: true,
+        message: `E-mail de recuperação enviado para ${profile.email}.`
+      });
+
+    } catch (err: any) {
+      console.error('[Admin] Erro ao enviar recuperação:', err);
+      return res.status(500).json({ error: err.message || 'Erro ao enviar e-mail de recuperação.' });
+    }
+  }
 }

@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-export type EmailTemplateId = 'WELCOME' | 'PAYMENT_APPROVED' | 'REWARDS' | 'SUPPORT_CHECK';
+export type EmailTemplateId = 'WELCOME' | 'PAYMENT_APPROVED' | 'REWARDS' | 'SUPPORT_CHECK' | 'PASSWORD_RESET';
 
 export class EmailService {
   private static resend = new Resend(process.env.RESEND_API_KEY);
@@ -81,8 +81,29 @@ export class EmailService {
             </div>
           `
         };
-      default:
-        throw new Error('Template não encontrado');
+      case 'PASSWORD_RESET':
+        return {
+          subject: 'Recuperação de Acesso - WeFashion AI 🔒',
+          html: `
+            <div style="${commonStyles}">
+              <div style="background: #FFF4F4; padding: 12px 20px; border-radius: 100px; display: inline-block; margin-bottom: 20px;">
+                <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: #FF4D4D;">Segurança da Conta</span>
+              </div>
+              <h1 style="color: #111; font-size: 32px; margin-bottom: 16px;">Recupere sua senha.</h1>
+              <p style="font-size: 16px; color: #444; line-height: 1.6;">Recebemos uma solicitação para redefinir o acesso à sua loja. Se você não solicitou isso, pode ignorar este e-mail.</p>
+              
+              <div style="margin: 40px 0; text-align: center;">
+                <a href="${data.resetLink || '#'}" style="background: #111; color: #fff; padding: 18px 32px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">Redefinir Minha Senha</a>
+              </div>
+              
+              <p style="font-size: 13px; color: #999; text-align: center; margin-top: 20px;">
+                Este link é válido por 24 horas.<br/>
+                Para sua segurança, nunca compartilhe este link com ninguém.
+              </p>
+              ${footer}
+            </div>
+          `
+        };
     }
   }
 
