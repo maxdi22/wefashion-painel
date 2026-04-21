@@ -537,10 +537,10 @@ export class DashboardController {
                                 <p class="text-[9px] font-bold text-[#A0A0A0] uppercase italic tracking-widest leading-relaxed">Sua loja está online e operando<br/>com WeFashion IA</p>
                             </div>
 
-                            <button class="w-full py-6 bg-[#1A1A1A] text-white flex items-center justify-center gap-5 rounded-[1.5rem] shadow-xl hover:opacity-80 transition-all group">
+                            <a href="/v1/plugin/download" class="w-full py-6 bg-[#1A1A1A] text-white flex items-center justify-center gap-5 rounded-[1.5rem] shadow-xl hover:opacity-80 transition-all group">
                                 <span class="material-symbols-outlined text-2xl">download</span>
                                 <span class="text-[10px] font-black uppercase tracking-[0.3em] italic">Baixar Core Plugin .zip</span>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
