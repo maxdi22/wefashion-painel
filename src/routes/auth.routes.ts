@@ -8,6 +8,7 @@ const router = Router();
 router.get('/login', AuthController.getLogin);
 router.get('/register', AuthController.getRegister);
 router.get('/logout', AuthController.logout);
+router.get('/reset-password', AuthController.getResetPassword);
 
 // API (JWT Interno)
 router.post('/login', AuthController.loginApi);

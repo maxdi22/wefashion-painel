@@ -804,10 +804,13 @@ export class DashboardController {
                                 <label class="text-[9px] font-black uppercase text-[#BCBCBC] block mb-4 italic tracking-[0.3em]">E-mail Administrativo</label>
                                 <input type="email" id="create-email" required placeholder="contato@loja.com.br" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-[800] tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none focus:border-[#1A1A1A]/30">
                             </div>
-                            <div>
                                 <label class="text-[9px] font-black uppercase text-[#BCBCBC] block mb-4 italic tracking-[0.3em]">Senha de Acesso</label>
-                                <input type="password" id="create-password" required placeholder="••••••••" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-[800] tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none focus:border-[#1A1A1A]/30">
-                            </div>
+                                <div class="relative">
+                                    <input type="password" id="create-password" required placeholder="••••••••" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-[800] tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none focus:border-[#1A1A1A]/30">
+                                    <button type="button" onclick="togglePasswordVisibility('create-password', this)" class="absolute right-6 top-1/2 -translate-y-1/2 text-[#BCBCBC] hover:text-[#1A1A1A] transition-colors">
+                                        <span class="material-symbols-outlined text-xl">visibility</span>
+                                    </button>
+                                </div>
                             <div class="pt-8">
                                 <button type="submit" id="btn-create" class="w-full py-6 bg-[#1A1A1A] text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-[1.5rem] hover:opacity-80 transition-all italic shadow-2xl flex items-center justify-center gap-4">
                                     <span class="material-symbols-outlined text-xl">rocket_launch</span> Criar e Provisionar Unidade
@@ -881,7 +884,12 @@ export class DashboardController {
                                         </div>
                                         <div>
                                             <label class="text-[9px] font-black uppercase text-[#BCBCBC] block mb-4 italic tracking-[0.3em]">Nova Senha</label>
-                                            <input type="password" id="manage-new-password" placeholder="••••••••" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-[800] tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none">
+                                            <div class="relative">
+                                                <input type="password" id="manage-new-password" placeholder="••••••••" class="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-[1.5rem] p-6 text-[11px] font-[800] tracking-tight text-[#1A1A1A] shadow-inner focus:outline-none">
+                                                <button type="button" onclick="togglePasswordVisibility('manage-new-password', this)" class="absolute right-6 top-1/2 -translate-y-1/2 text-[#BCBCBC] hover:text-[#1A1A1A] transition-colors">
+                                                    <span class="material-symbols-outlined text-xl">visibility</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="flex gap-4">
@@ -908,7 +916,18 @@ export class DashboardController {
                     .animate-slide-left { animation: slide-left 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
                 </style>
 
-                <script>
+                    function togglePasswordVisibility(inputId, btn) {
+                        const input = document.getElementById(inputId);
+                        const icon = btn.querySelector('.material-symbols-outlined');
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            icon.innerText = 'visibility_off';
+                        } else {
+                            input.type = 'password';
+                            icon.innerText = 'visibility';
+                        }
+                    }
+
                     function openCreateModal() {
                         document.getElementById('modal-create').classList.remove('hidden');
                         document.body.style.overflow = 'hidden';

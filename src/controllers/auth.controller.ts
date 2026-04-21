@@ -71,8 +71,11 @@ export class AuthController {
                     <div class="relative group">
                         <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-300 group-focus-within:text-primary transition-colors">lock_person</span>
                         <input type="password" id="password" name="password" value="password123" required 
-                            class="w-full bg-surface border border-neutral-100 p-5 pl-12 rounded-2xl text-sm font-bold tracking-widest text-[#1A1A1A] focus:border-primary outline-none transition-all placeholder:text-neutral-300"
+                            class="w-full bg-surface border border-neutral-100 p-5 pl-12 pr-12 rounded-2xl text-sm font-bold tracking-widest text-[#1A1A1A] focus:border-primary outline-none transition-all placeholder:text-neutral-300"
                             placeholder="••••••••">
+                        <button type="button" id="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-xl">visibility</span>
+                        </button>
                     </div>
                 </div>
 
@@ -102,6 +105,14 @@ export class AuthController {
         const errorMessage = document.getElementById('errorMessage');
         const submitBtn = document.getElementById('submitBtn');
         const loader = document.getElementById('loader');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePassword.querySelector('.material-symbols-outlined').textContent = type === 'password' ? 'visibility' : 'visibility_off';
+        });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -149,14 +160,19 @@ export class AuthController {
   /**
    * Renderiza a tela de Registro
    */
-  public static async getRegister(req: Request, res: Response) {
+  }
+
+  /**
+   * Renderiza a tela de Redefinição de Senha (via link de e-mail)
+   */
+  public static async getResetPassword(req: Request, res: Response) {
       const html = `
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro | WeFashion</title>
+    <title>Definir Nova Senha | WeFashion</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script src="https://cdn.tailwindcss.com"></script>
@@ -164,6 +180,8 @@ export class AuthController {
         :root {
             --primary: #1A1A1A;
             --surface: #F8F8F8;
+            --error: #E53E3E;
+            --success: #22C55E;
         }
         body { 
             font-family: 'Inter', sans-serif;
@@ -176,25 +194,120 @@ export class AuthController {
     <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
     
     <div class="w-full max-w-[480px] relative z-10">
-        <div class="bg-white p-12 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-neutral-100 text-center">
-            <div class="mb-10 flex justify-center">
-                <div class="w-16 h-16 rounded-2xl bg-error/10 flex items-center justify-center text-error">
-                    <span class="material-symbols-outlined text-4xl">lock</span>
-                </div>
+        <div class="text-center mb-12">
+            <h1 class="text-2xl font-headline font-black tracking-tighter text-[#1A1A1A] uppercase">WeFashion</h1>
+            <p class="text-[10px] uppercase tracking-[0.4em] text-[#5F5E5E] mt-2 font-bold italic">Recuperação de Acesso</p>
+        </div>
+
+        <div class="bg-white p-12 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-neutral-100">
+            <div class="mb-10 text-center">
+                <h2 class="text-3xl font-headline font-extrabold tracking-tighter text-[#1A1A1A] uppercase leading-none mb-2">Nova Chave</h2>
+                <p class="text-xs text-[#5F5E5E] font-medium tracking-wide">Defina sua nova credencial de acesso master.</p>
             </div>
-            
-            <h2 class="text-3xl font-headline font-extrabold tracking-tighter text-[#1A1A1A] uppercase leading-none mb-6">Acesso Privado</h2>
-            <p class="text-sm text-[#5F5E5E] font-medium leading-relaxed mb-10">
-                A WeFashion opera em um ecossistema exclusivo. <br>
-                Novos registros são processados apenas via convite direto ou aprovação comercial.
-            </p>
-            
-            <div class="space-y-4">
-                <a href="mailto:comercial@wefashion.com" class="block w-full py-5 bg-[#1A1A1A] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:scale-[1.02] transition-all">Contatar Comercial</a>
-                <a href="/login" class="block w-full py-5 bg-surface text-neutral-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:text-[#1A1A1A] transition-all">Voltar para o Login</a>
+
+            <div id="reset-fb" class="hidden mb-8 p-4 text-[10px] font-bold uppercase tracking-widest rounded-xl text-center"></div>
+
+            <form id="resetForm" class="space-y-8">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1 italic">Nova Senha</label>
+                    <div class="relative group">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-300 group-focus-within:text-primary transition-colors">lock</span>
+                        <input type="password" id="password" required 
+                            class="w-full bg-surface border border-neutral-100 p-5 pl-12 pr-12 rounded-2xl text-sm font-bold tracking-widest text-[#1A1A1A] focus:border-primary outline-none transition-all placeholder:text-neutral-300"
+                            placeholder="••••••••">
+                        <button type="button" onclick="toggleVisibility('password', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-xl">visibility</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1 italic">Confirmar Senha</label>
+                    <div class="relative group">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-300 group-focus-within:text-primary transition-colors">lock</span>
+                        <input type="password" id="confirmPassword" required 
+                            class="w-full bg-surface border border-neutral-100 p-5 pl-12 pr-12 rounded-2xl text-sm font-bold tracking-widest text-[#1A1A1A] focus:border-primary outline-none transition-all placeholder:text-neutral-300"
+                            placeholder="••••••••">
+                        <button type="button" onclick="toggleVisibility('confirmPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-xl">visibility</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" id="submitBtn" class="w-full py-6 bg-[#1A1A1A] text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-xl italic">
+                        <span>Atualizar Credencial</span>
+                        <div id="loader" class="hidden w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-12 pt-8 border-t border-neutral-50 text-center">
+                <a href="/login" class="text-[10px] font-black text-neutral-300 uppercase tracking-[0.2em] hover:text-primary transition-all underline">Voltar ao Login Master</a>
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleVisibility(id, btn) {
+            const input = document.getElementById(id);
+            const icon = btn.querySelector('.material-symbols-outlined');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        }
+
+        const resetForm = document.getElementById('resetForm');
+        const fb = document.getElementById('reset-fb');
+        const submitBtn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+
+        resetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                fb.textContent = 'AS SENHAS NÃO COINCIDEM';
+                fb.className = 'mb-8 p-4 bg-red-50 text-red-500 border border-red-100 text-[10px] font-bold uppercase tracking-widest rounded-xl text-center block';
+                return;
+            }
+
+            fb.classList.add('hidden');
+            submitBtn.disabled = true;
+            loader.classList.remove('hidden');
+
+            try {
+                const res = await fetch('/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, confirmPassword })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || 'Falha ao redefinir senha');
+
+                fb.textContent = 'SENHA ATUALIZADA! ACESSO REESTABELECIDO.';
+                fb.className = 'mb-8 p-4 bg-green-50 text-green-600 border border-green-100 text-[10px] font-bold uppercase tracking-widest rounded-xl text-center block';
+                
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+
+            } catch (err) {
+                fb.textContent = err.message || 'ERRO CRÍTICO NA REDEFINIÇÃO';
+                fb.className = 'mb-8 p-4 bg-red-50 text-red-500 border border-red-100 text-[10px] font-bold uppercase tracking-widest rounded-xl text-center block';
+                submitBtn.disabled = false;
+                loader.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
       `;
